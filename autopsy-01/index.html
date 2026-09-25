@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mistake Autopsy #1: (a + b)² | Where Did I Go Wrong?</title>
+<meta name="description" content="Tap through the mistake: why (a + b)² is not a² + b², shown with numbers and a square.">
+<link rel="icon" href="../icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@800&display=swap">
+<style>
+:root{
+  --ink:#1F2A44; --red:#E53935; --paper:#FFFBF0; --line:#D6E2F0;
+  --blue:#3B6FD8; --green:#2E9E6B; --marker:#FFE066;
+  --hand:"Bradley Hand","Chalkboard SE","Patrick Hand","Segoe Print",cursive;
+  --round:"Arial Rounded MT Bold","Nunito","Helvetica Neue",Arial,sans-serif;
+}
+html,body{margin:0;height:100%;background:#111;overflow:hidden}
+body.rec{cursor:none}
+#stage{
+  position:absolute;left:50%;top:50%;width:1080px;height:1920px;
+  transform:translate(-50%,-50%) scale(var(--s,0.4));
+  background:var(--paper) repeating-linear-gradient(to bottom,transparent 0 70px,var(--line) 70px 73px);
+  overflow:hidden;font-family:var(--round);color:var(--ink);
+}
+#stage::before{content:"";position:absolute;left:110px;top:0;bottom:0;width:4px;background:#F3B8B6}
+
+.hdr{position:absolute;top:90px;left:0;right:0;text-align:center}
+.pill{display:inline-block;background:var(--ink);color:var(--paper);font-size:44px;letter-spacing:6px;padding:18px 44px;border-radius:60px}
+.brand{position:absolute;bottom:90px;left:0;right:0;text-align:center;font-size:38px;opacity:.75}
+.brand b{color:var(--red)}
+
+.panel{position:absolute;left:0;right:0;top:260px;bottom:300px;opacity:0;transition:opacity .5s}
+.panel.on{opacity:1}
+.el{position:absolute;left:0;right:0;text-align:center;white-space:nowrap;opacity:0;transform:translateY(30px);transition:opacity .5s,transform .5s}
+.el.on{opacity:1;transform:none}
+.hand{font-family:var(--hand);font-weight:bold}
+.title{font-size:64px}
+.small{font-size:44px;line-height:1.35;white-space:normal;padding:0 150px}
+.small .hand{white-space:nowrap}
+.red{color:var(--red)}
+.green{color:var(--green)}
+.hl{background:rgba(46,158,107,.15);border-bottom:8px solid var(--green);padding:0 10px;border-radius:8px;color:var(--green)}
+
+/* yellow highlighter: draws itself left to right, fades away when removed */
+.mark{position:relative;z-index:0;padding:0 16px}
+.mark::before{content:"";position:absolute;z-index:-1;left:0;top:22%;height:66%;width:0;background:var(--marker);border-radius:6px;opacity:0;transition:opacity .5s,width 0s .5s}
+.mark.lit::before,.mark.on::before,.on>.mark.full::before{width:100%;opacity:1;transition:width .7s ease-out,opacity 0s}
+
+/* handwriting reveal: text is "written" left to right */
+.write{opacity:1;transform:none;clip-path:inset(-40px 100% -40px -40px);transition:clip-path 1.4s linear}
+.write.on{clip-path:inset(-40px -40px -40px -40px)}
+
+/* pen strokes draw themselves */
+.draw{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1s ease-in-out}
+.draw.on{stroke-dashoffset:0}
+svg .fade{opacity:0;transition:opacity .6s}
+svg .fade.on{opacity:1}
+svg .late{transition-delay:.8s}
+
+.stamp{font-size:96px;color:var(--red);transform:scale(1.8) rotate(-6deg);transition:opacity .25s,transform .35s cubic-bezier(.3,1.6,.5,1)}
+.stamp.on{transform:scale(1) rotate(-6deg);transition-delay:.9s}
+.stamp span{border:9px solid var(--red);border-radius:18px;padding:6px 36px}
+.pop{transform:scale(.4);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.pop.on{transform:scale(1)}
+
+/* red-pen box lands like a stamp */
+.boxstamp{transform:scale(1.8);transition:opacity .25s,transform .35s cubic-bezier(.3,1.6,.5,1)}
+.boxstamp.on{transform:scale(1)}
+.still{transform:none}
+.after.on{transition-delay:1s}
+.box{display:inline-block;border:8px solid var(--red);border-radius:28px;padding:34px 50px;font-size:68px;line-height:1.35;transform:rotate(-1.5deg)}
+
+@keyframes glow{0%,100%{fill-opacity:.22}50%{fill-opacity:.5}}
+.glow.on{animation:glow 1.2s ease-in-out 2}
+
+#help{position:fixed;left:16px;bottom:16px;background:rgba(255,255,255,.94);color:#1F2A44;font:15px/1.55 -apple-system,Helvetica,sans-serif;padding:12px 16px;border-radius:10px;max-width:360px;z-index:9}
+#help i{display:block;margin-top:6px;font-style:normal;font-weight:600}
+#help b{font-family:ui-monospace,Menlo,monospace;background:#1F2A44;color:#fff;border-radius:4px;padding:0 6px}
+#help.hide{display:none}
+/* phones: short box, just the hide hint */
+@media (max-width:600px){ #help .keys{display:none} #help i{margin:0} #help{right:16px;max-width:none;text-align:center;font-size:17px} }
+.instant *, .instant *::before, .instant{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion: reduce){ #stage *{transition-duration:.01s!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="hdr"><span class="pill">MISTAKE AUTOPSY #1</span></div>
+
+  <!-- 1. The mistake -->
+  <section class="panel" id="p1">
+    <div class="el title" id="hook" style="top:60px">Most students write this 👇</div>
+    <div class="el write hand" id="wrong" style="top:230px;font-size:100px">(a + b)² = a² + b²</div>
+    <svg style="position:absolute;left:0;top:0;overflow:visible" width="1080" height="600">
+      <path class="draw" id="circ" pathLength="1" stroke="#E53935" stroke-width="12"
+        d="M 905 225 C 1065 265, 1060 420, 820 452 C 600 480, 190 478, 80 390 C -15 300, 150 205, 430 192 C 640 182, 850 196, 985 262"/>
+    </svg>
+    <div class="el stamp" id="stamp" style="top:620px"><span>✖ WRONG</span></div>
+  </section>
+
+  <!-- 2. Number test -->
+  <section class="panel" id="p2">
+    <div class="el title" id="t2" style="top:40px">Test it with numbers</div>
+    <div class="el hand" id="va" style="top:170px;left:0;right:50%;font-size:88px"><span class="mark" id="vaM">a = 3</span></div>
+    <div class="el hand" id="vb" style="top:170px;left:50%;right:0;font-size:88px"><span class="mark" id="vbM">b = 4</span></div>
+    <div class="el write hand" id="l1" style="top:390px;font-size:60px;transition-duration:2.6s"><span class="red">(a + b)²</span> = (3 + 4)² = 7² = <span class="red">49</span></div>
+    <div class="el write hand" id="l2" style="top:540px;font-size:56px;transition-duration:2.6s"><span class="red">a² + b²</span> = 3² + 4² = 9 + 16 = <span class="red">25</span></div>
+    <div class="el red" id="ne" style="top:730px;font-size:120px">49 ≠ 25</div>
+    <svg style="position:absolute;left:0;top:0;overflow:visible" width="1080" height="1360">
+      <path class="draw" id="arr" pathLength="1" stroke="#1F2A44" stroke-width="7" style="transition-duration:.7s;transition-timing-function:ease-out" d="M 540 895 C 520 930, 560 960, 540 1000"/>
+      <path class="draw" id="arrh" pathLength="1" stroke="#1F2A44" stroke-width="7" style="transition-duration:.3s;transition-delay:.7s" d="M 515 975 L 540 1004 L 565 975"/>
+    </svg>
+    <div class="el after" id="conc" style="top:1020px;font-size:56px">So, <span class="hand">(a + b)² ≠ a² + b²</span></div>
+    <div class="el" id="lets" style="top:1130px;font-size:52px">Let's find where it went wrong 🔍</div>
+  </section>
+
+  <!-- 3. Square -->
+  <section class="panel" id="p3">
+    <div class="el title" id="t3" style="top:20px">The square <span class="hand">(a + b)²</span></div>
+    <svg style="position:absolute;left:0;top:130px" width="1080" height="1100" font-family="Bradley Hand, Chalkboard SE, Patrick Hand, cursive" font-weight="bold" text-anchor="middle">
+      <g class="fade" id="lab" font-size="64" fill="#1F2A44">
+        <text x="340" y="95">a</text><text x="690" y="95">b</text>
+        <text x="145" y="290">a</text><text x="145" y="640">b</text>
+      </g>
+      <!-- pieces (a=3, b=4 → 300px, 400px) -->
+      <rect class="fade" id="a2" x="190" y="120" width="300" height="300" fill="#3B6FD8" fill-opacity=".25"/>
+      <rect class="fade" id="b2" x="490" y="420" width="400" height="400" fill="#2E9E6B" fill-opacity=".25"/>
+      <rect class="fade glow" id="ab1" x="490" y="120" width="400" height="300" fill="#E53935" fill-opacity=".22"/>
+      <rect class="fade glow" id="ab2" x="190" y="420" width="300" height="400" fill="#E53935" fill-opacity=".22"/>
+      <g class="fade" id="a2t" font-size="84" fill="#3B6FD8"><text x="340" y="298">a²</text></g>
+      <g class="fade" id="b2t" font-size="96" fill="#2E9E6B"><text x="690" y="652">b²</text></g>
+      <g class="fade" id="abt" font-size="84" fill="#E53935"><text x="690" y="298">ab</text><text x="340" y="648">ab</text></g>
+      <path class="draw" id="sq" pathLength="1" stroke="#1F2A44" stroke-width="9" d="M 190 120 H 890 V 820 H 190 Z"/>
+      <path class="draw" id="cuts" pathLength="1" stroke="#1F2A44" stroke-width="6" d="M 490 120 V 820 M 190 420 H 890"/>
+      <!-- red pen traces each side as it's named: left side (top→bottom), then top side (left→right) -->
+      <path class="draw" id="sideV" pathLength="1" stroke="#E53935" stroke-width="14" d="M 190 120 V 820"/>
+      <path class="draw" id="sideH" pathLength="1" stroke="#E53935" stroke-width="14" d="M 190 120 H 890"/>
+    </svg>
+    <div class="el" id="cap1" style="top:1000px;font-size:58px">Wrong formula counts only <span style="color:var(--blue)">a²</span> + <span style="color:var(--green)">b²</span></div>
+    <div class="el red" id="cap2" style="top:1095px;font-size:62px">Forgotten: ab + ab = 2ab</div>
+  </section>
+
+  <!-- 4. Correct rule + substitution -->
+  <section class="panel" id="p4">
+    <div class="el title" id="t4" style="top:40px">The correct rule ✅</div>
+    <div class="el still hand" id="cf1" style="top:190px;left:150px;right:auto;text-align:left;font-size:120px">(a + b)²</div>
+    <div class="el" id="subst" style="top:175px;left:auto;right:60px">
+      <div style="font-size:40px;margin-bottom:6px">Substitute</div>
+      <span class="hand mark" id="substM" style="font-size:66px">a = 3, b = 4</span>
+    </div>
+    <div class="el write hand" id="cf2" style="top:350px;left:150px;right:auto;text-align:left;font-size:112px"><span id="eqS">=</span> <span id="tA">a²</span> <span id="pl1">+</span> <span class="hl" id="tB">2ab</span> <span id="pl2">+</span> <span id="tC">b²</span></div>
+    <svg id="p4svg" style="position:absolute;left:0;top:0;overflow:visible" width="1080" height="1360"></svg>
+    <div class="el hand" id="eq0" style="top:720px;font-size:100px">=</div>
+    <div class="el hand" id="n9"  style="top:720px;font-size:100px">9</div>
+    <div class="el hand" id="p1s" style="top:720px;font-size:100px">+</div>
+    <div class="el hand green" id="n24" style="top:720px;font-size:100px">24</div>
+    <div class="el hand" id="p2s" style="top:720px;font-size:100px">+</div>
+    <div class="el hand" id="n16" style="top:720px;font-size:100px">16</div>
+    <div class="el hand pop" id="res" style="top:890px;font-size:120px;text-align:left;right:auto">= <span class="green">49</span> ✅</div>
+  </section>
+
+  <!-- 5. Why the brain slips -->
+  <section class="panel" id="p5">
+    <div class="el title" id="t5" style="top:40px">Why does the brain slip?</div>
+    <div class="el hand" id="w1" style="top:220px;font-size:100px">(ab)² = a²b² ✅</div>
+    <div class="el hand" id="w2" style="top:400px;font-size:88px">(a + b)² ≠ a² + b² <span class="red">✖</span></div>
+    <div class="el hand green" id="w3" style="top:580px;font-size:74px">(a + b)² = a² + 2ab + b² ✅</div>
+    <div class="el boxstamp" id="rule" style="top:820px"><span class="box">Squares spread over ×<br><span class="red">NOT over +</span></span></div>
+  </section>
+
+  <!-- 6. Try it yourself (applet link) -->
+  <section class="panel" id="p7">
+    <div class="el title" id="ty1" style="top:40px">Try it yourself! 👆</div>
+    <svg class="el" id="tysq" style="top:170px" width="1080" height="560" viewBox="0 0 1080 560">
+      <g transform="translate(300,20)">
+        <rect x="0" y="0" width="160" height="160" fill="#3B6FD8" fill-opacity=".3">
+          <animate attributeName="width"  values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="160;300;160" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="160" y="0" width="320" height="160" fill="#E53935" fill-opacity=".25">
+          <animate attributeName="x"      values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="320;180;320" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="160;300;160" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="160" width="160" height="320" fill="#E53935" fill-opacity=".25">
+          <animate attributeName="y"      values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="320;180;320" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="160" y="160" width="320" height="320" fill="#2E9E6B" fill-opacity=".3">
+          <animate attributeName="x"      values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="y"      values="160;300;160" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="320;180;320" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="320;180;320" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="0" width="480" height="480" fill="none" stroke="#1F2A44" stroke-width="8"/>
+      </g>
+    </svg>
+    <div class="el small" id="ty2" style="top:760px">Tap through this lesson at your own pace and see the square split for yourself</div>
+    <div class="el pop" id="ty3" style="top:960px;font-size:76px"><span class="mark full">🔗 Link in bio</span></div>
+  </section>
+
+  <!-- 7. Call to action -->
+  <section class="panel" id="p6">
+    <svg class="el" id="logo" style="top:40px;margin:auto" width="1080" height="380" viewBox="-350 0 1780 1080">
+      <text x="540" y="770" text-anchor="middle" font-family="Arial Rounded MT Bold, Nunito, Helvetica Neue, Arial" font-weight="bold" font-size="640" fill="#1F2A44">?</text>
+      <path d="M 835 270 C 1000 400, 975 790, 700 885 C 450 990, 135 860, 118 560 C 100 280, 380 108, 640 150 C 760 168, 850 205, 905 262" fill="none" stroke="#E53935" stroke-width="38" stroke-linecap="round"/>
+    </svg>
+    <div class="el" id="c1" style="top:490px;font-size:72px">Where did <span class="red">YOU</span> go wrong?</div>
+    <div class="el pop" id="i1" style="top:720px;left:0;right:50%;font-size:96px;line-height:1">📸</div>
+    <div class="el pop" id="i2" style="top:720px;left:50%;right:0;font-size:96px;line-height:1">💾</div>
+  </section>
+
+  <div class="brand">Where Did I Go <b>Wrong?</b> | Maths</div>
+</div>
+
+<div id="help">
+  <span class="keys"><b>Tap</b> the page, or press <b>→</b> / <b>Space</b>, for the next step<br>
+  <b>←</b> back &nbsp; <b>R</b> restart &nbsp; <b>M</b> sound on/off<br>
+  Recording: <b>S</b> step mode · <b>A</b> silent auto-play · <b>H</b> hide this box</span>
+  <i>Tap this box to hide it ✕</i>
+</div>
+
+<script>
+// Each step reveals elements (kept on for the rest of the panel).
+// `lit` = highlighter shown only while that step is current. `sfx` = sound(s) on entering the step.
+// `ms` = auto-play duration, roughly matching the voiceover in script.md.
+const STEPS = [
+  {p:'p1', show:['hook','wrong'], sfx:'write', ms:3000},
+  {p:'p1', show:['circ','stamp'], sfx:'thud', ms:4200},
+  {p:'p2', show:['t2'], ms:1800},
+  {p:'p2', show:['va'], lit:['vaM'], sfx:'swish', ms:2000},
+  {p:'p2', show:['vb'], lit:['vbM'], sfx:'swish', ms:2000},
+  {p:'p2', show:['l1'], sfx:'write@2.6', ms:5500},
+  {p:'p2', show:['l2'], sfx:'write@2.6', ms:5500},
+  {p:'p2', show:['ne'], sfx:'buzz', ms:2500},
+  {p:'p2', show:['arr','arrh','conc'], ms:4000},
+  {p:'p2', show:['lets'], ms:2500},
+  {p:'p3', show:['t3','sq','lab','cuts'], ms:6000},
+  {p:'p3', show:['sideV'], ms:1800},
+  {p:'p3', show:['sideH'], ms:1800},
+  {p:'p3', show:['a2','b2','a2t','b2t','cap1'], ms:4000},
+  {p:'p3', show:['ab1','ab2','abt','cap2'], sfx:'reveal', ms:5000},
+  {p:'p4', show:['t4','cf1','cf2'], sfx:['chime','write'], ms:5500},
+  {p:'p4', show:['subst','substM'], sfx:'swish', ms:3000},
+  {p:'p4', show:['ar1','ar1h','eq0','n9'], sfx:'tick', ms:2500},
+  {p:'p4', show:['ar2','ar2h','p1s','n24'], sfx:'tick', ms:3000},
+  {p:'p4', show:['ar3','ar3h','p2s','n16'], sfx:'tick', ms:2500},
+  {p:'p4', show:['res'], sfx:'chime', ms:3500},
+  {p:'p5', show:['t5','w1'], ms:4200},
+  {p:'p5', show:['w2'], ms:3200},
+  {p:'p5', show:['w3'], ms:3500},
+  {p:'p5', show:['rule'], sfx:'stamp', ms:3800},
+  {p:'p7', show:['ty1','tysq','ty2'], ms:4000},
+  {p:'p7', show:['ty3'], ms:2500},
+  {p:'p6', show:['logo','c1'], ms:2600},
+  {p:'p6', show:['i1'], sfx:'pop', ms:4000},
+  {p:'p6', show:['i2'], sfx:'pop', ms:3000},
+];
+
+const stage = document.getElementById('stage');
+const help = document.getElementById('help');
+let cur = -1, timer = null;
+
+function fit(){ stage.style.setProperty('--s', Math.min(innerWidth/1080, innerHeight/1920)); }
+addEventListener('resize', fit); fit();
+
+/* ---------- soft sounds (Web Audio, generated — no files) ---------- */
+let ac = null, muted = false;
+function audio(){ try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); }catch(e){} return ac; }
+function play(kind){
+  if (muted || !kind) return;
+  const [name, arg] = kind.split('@');
+  const a = audio(); if (!a) return;
+  const T = a.currentTime;
+  // filtered noise burst (pen / marker / thud texture)
+  const noise = (t, len, type, f1, f2, peak) => {
+    const buf = a.createBuffer(1, Math.ceil(a.sampleRate*len), a.sampleRate), d = buf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf; f.type = type; f.Q.value = .9;
+    f.frequency.setValueAtTime(f1,t); f.frequency.linearRampToValueAtTime(f2,t+len);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+Math.min(.06,len/3)); g.gain.linearRampToValueAtTime(0,t+len);
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start(t); src.stop(t+len);
+  };
+  // soft tone with optional pitch glide
+  const tone = (t, hz, dur, peak, type='sine', hzEnd) => {
+    const o = a.createOscillator(), g = a.createGain(); o.type = type;
+    o.frequency.setValueAtTime(hz,t); if (hzEnd) o.frequency.exponentialRampToValueAtTime(hzEnd,t+dur);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+.012); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur+.05);
+  };
+  switch (name){
+    case 'swish':   noise(T,.55,'bandpass',1800,3200,.12); break;                 // highlighter stroke
+    case 'tick':    tone(T,1200,.18,.06); break;                                    // dotted arrow lands
+    case 'chime':   tone(T,784,.9,.12); tone(T+.12,1047,.9,.12); break;             // correct!
+    case 'write':                                                                   // pen writing on paper; 'write@2.6' = 2.6 s (matches the write-on)
+      for (let t = 0; t < (+arg || 1.4) - .1; t += .08 + Math.random()*.06)
+        noise(T+t, .06+Math.random()*.05, 'bandpass', 2400+Math.random()*1600, 3200+Math.random()*1600, .045+Math.random()*.03);
+      break;
+    case 'thud':    tone(T+.95,120,.3,.35,'sine',50); noise(T+.95,.12,'lowpass',500,200,.18); break;  // WRONG stamp lands (after the circle)
+    case 'stamp':   tone(T+.22,120,.3,.35,'sine',50); noise(T+.22,.12,'lowpass',500,200,.18); break;  // rule box stamps down
+    case 'buzz':    tone(T,392,.28,.08,'triangle'); tone(T+.26,311,.45,.08,'triangle'); break;  // uh-oh
+    case 'reveal':  tone(T,500,.55,.06,'sine',1000); tone(T+.3,1500,.25,.04); tone(T+.45,2000,.3,.035); break;
+    case 'pop':     tone(T,700,.14,.14,'sine',250); break;
+  }
+}
+
+/* ---------- step engine ---------- */
+function apply(i, sound){
+  cur = Math.max(-1, Math.min(i, STEPS.length-1));
+  document.querySelectorAll('.on,.lit').forEach(e => e.classList.remove('on','lit'));
+  if (cur < 0) return;
+  const st = STEPS[cur], p = st.p;
+  document.getElementById(p).classList.add('on');
+  for (let j = 0; j <= cur; j++)
+    if (STEPS[j].p === p) STEPS[j].show.forEach(id => document.getElementById(id)?.classList.add('on'));
+  (st.lit||[]).forEach(id => document.getElementById(id).classList.add('lit'));
+  if (sound) [].concat(st.sfx).forEach(play);
+}
+function next(){ help.classList.add('hide'); clearTimeout(timer); audio(); apply(cur+1, true); }
+
+function auto(){
+  clearTimeout(timer); apply(0, true);
+  (function tick(){ timer = setTimeout(() => { if (cur < STEPS.length-1){ apply(cur+1, true); tick(); } }, STEPS[cur].ms); })();
+}
+
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 's'){ clearTimeout(timer); help.classList.add('hide'); document.body.classList.add('rec'); audio(); apply(-1); }
+  else if (k === 'a'){ help.classList.add('hide'); document.body.classList.add('rec'); audio(); auto(); }
+  else if (k === 'arrowright' || k === ' ' || k === 'enter'){ e.preventDefault(); next(); }
+  else if (k === 'arrowleft'){ clearTimeout(timer); apply(cur-1); }
+  else if (k === 'r'){ clearTimeout(timer); apply(-1); }
+  else if (k === 'm'){ muted = !muted; }
+  else if (k === 'h'){ help.classList.toggle('hide'); }
+});
+stage.addEventListener('click', next);
+// tapping the help box only hides it (keeps the blank intro page for phone recordings)
+help.addEventListener('click', e => { e.stopPropagation(); help.classList.add('hide'); audio(); });
+
+/* ---------- dotted arrows from a², 2ab, b² down to 9, 24, 16 ---------- */
+function layoutSubstitution(){
+  const s = parseFloat(getComputedStyle(stage).getPropertyValue('--s')) || 1;
+  const panel = document.getElementById('p4').getBoundingClientRect();
+  const box = id => { const r = document.getElementById(id).getBoundingClientRect();
+    return {cx:(r.left+r.width/2-panel.left)/s, top:(r.top-panel.top)/s, bottom:(r.bottom-panel.top)/s, left:(r.left-panel.left)/s}; };
+  const place = (id, cx) => { const e = document.getElementById(id); e.style.left = (cx-150)+'px'; e.style.right = 'auto'; e.style.width = '300px'; };
+  [['eqS','eq0'],['tA','n9'],['pl1','p1s'],['tB','n24'],['pl2','p2s'],['tC','n16']].forEach(([from,to]) => place(to, box(from).cx));
+  document.getElementById('res').style.left = (box('eqS').left - 4)+'px';
+
+  const svg = document.getElementById('p4svg'), NS = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  const defs = document.createElementNS(NS,'defs'); svg.appendChild(defs);
+  [['tA','ar1'],['tB','ar2'],['tC','ar3']].forEach(([term,id]) => {
+    const b = box(term), x = b.cx, y1 = b.bottom + 18, y2 = 728, mid = (y1+y2)/2;
+    const d = `M ${x} ${y1} Q ${x+75} ${mid} ${x} ${y2}`;
+    const mask = document.createElementNS(NS,'mask'); mask.id = 'm_'+id;
+    mask.setAttribute('maskUnits','userSpaceOnUse'); mask.setAttribute('x',0); mask.setAttribute('y',0); mask.setAttribute('width',1080); mask.setAttribute('height',1360);
+    mask.innerHTML = `<path id="${id}" class="draw" pathLength="1" d="${d}" stroke="#fff" stroke-width="30"/>`;
+    defs.appendChild(mask);
+    svg.insertAdjacentHTML('beforeend',
+      `<path d="${d}" fill="none" stroke="#1F2A44" stroke-opacity=".75" stroke-width="7" stroke-linecap="round" stroke-dasharray="0.1 17" mask="url(#m_${id})"/>
+       <path id="${id}h" class="fade late" d="M ${x-17} ${y2-22} L ${x} ${y2} L ${x+15} ${y2-24}" fill="none" stroke="#1F2A44" stroke-opacity=".75" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`);
+  });
+  if (cur >= 0) apply(cur);
+}
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(layoutSubstitution);
+
+// ?step=N shows the finished state of step N (used for previews / carousel stills)
+const q = new URLSearchParams(location.search);
+if (q.has('step')){ stage.classList.add('instant'); help.classList.add('hide'); apply(+q.get('step')); }
+</script>
+</body>
+</html>
