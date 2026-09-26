@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Send your mistake | Where Did I Go Wrong? Maths</title>
+<meta name="description" content="Send a photo of a maths answer you got wrong. The best ones become Viewer Autopsy videos, always anonymous.">
+<link rel="icon" href="../icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@800&display=swap">
+<style>
+:root{
+  --ink:#1F2A44; --red:#E53935; --paper:#FFFBF0; --line:#D6E2F0; --margin:#F3B8B6; --green:#2E9E6B;
+  --hand:"Bradley Hand","Chalkboard SE","Patrick Hand",cursive;
+  --round:"Arial Rounded MT Bold","Nunito","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;font-family:var(--round);color:var(--ink);
+  background:var(--paper) repeating-linear-gradient(to bottom,transparent 0 34px,var(--line) 34px 36px);
+}
+body::before{content:"";position:fixed;left:44px;top:0;bottom:0;width:2px;background:var(--margin)}
+main{max-width:560px;margin:0 auto;padding:32px 16px 60px 64px}
+.back{display:inline-flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font-size:15px;margin-bottom:22px}
+.back img{width:44px;height:44px;border-radius:50%}
+h1{font-size:32px;line-height:1.2;margin:0 0 18px}
+ol{font-family:var(--hand);font-weight:bold;font-size:22px;line-height:1.35;margin:0 0 24px;padding-left:26px}
+ol li{margin-bottom:6px}
+.card{background:#fff;border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);padding:10px 14px}
+.card iframe{display:block;width:100%;border:0}
+.soon{font-family:var(--hand);font-weight:bold;font-size:22px;padding:14px 4px;margin:0}
+.alt{margin-top:28px;font-size:16px;line-height:1.5}
+.alt a{color:var(--red)}
+@media (max-width:420px){ main{padding-left:56px} body::before{left:36px} ol{font-size:20px} }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../"><img src="../icon.png" alt="">Where Did I Go Wrong? | Maths</a>
+
+  <h1>Send your mistake 📸</h1>
+  <ol>
+    <li>Take a photo of the question.</li>
+    <li>One question per photo.</li>
+    <li>The best ones become Viewer Autopsy videos, always anonymous.</li>
+  </ol>
+
+  <div class="card" id="form">
+    <p class="soon">The form opens soon. For now, please <a href="https://ig.me/m/wheredidigowrong.maths">DM us on Instagram</a>.</p>
+  </div>
+
+  <p class="alt">On Instagram? You can also <a href="https://ig.me/m/wheredidigowrong.maths">DM your mistake</a> to @wheredidigowrong.maths.</p>
+</main>
+
+<script>
+// Paste the Tally form ID here (the part after tally.so/r/). Leave as "" to show the "opens soon" message.
+var FORM_ID = "lbQ9dN";
+
+if (FORM_ID) {
+  // ?src=yt / ?src=ig on this page's link is passed to the form's hidden "src" field,
+  // so each submission shows where the student came from.
+  var src = (new URLSearchParams(location.search).get("src") || "site").replace(/[^a-z0-9_-]/gi, "").slice(0, 20);
+  var box = document.getElementById("form");
+  box.innerHTML = '<iframe title="Send your mistake" height="600" loading="lazy"></iframe>';
+  box.firstChild.setAttribute("data-tally-src",
+    "https://tally.so/embed/" + FORM_ID + "?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1&src=" + src);
+  var s = document.createElement("script");
+  s.src = "https://tally.so/widgets/embed.js";
+  s.onload = s.onerror = function () {
+    if (window.Tally) Tally.loadEmbeds();
+    else document.querySelectorAll("iframe[data-tally-src]").forEach(function (f) { f.src = f.dataset.tallySrc; });
+  };
+  document.body.appendChild(s);
+}
+</script>
+</body>
+</html>
