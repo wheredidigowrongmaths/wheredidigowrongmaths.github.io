@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mistake Autopsy #2: (a − b)² | Where Did I Go Wrong?</title>
+<meta name="description" content="Which is correct: a² − 2ab − b² or a² − 2ab + b²? Tap through a square that shows (a − b)² step by step.">
+<link rel="icon" href="../icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Nunito:wght@800&display=swap">
+<style>
+:root{
+  --ink:#1F2A44; --red:#E53935; --paper:#FFFBF0; --line:#D6E2F0;
+  --blue:#3B6FD8; --green:#2E9E6B; --marker:#FFE066;
+  --hand:"Bradley Hand","Chalkboard SE","Patrick Hand","Segoe Print",cursive;
+  --round:"Arial Rounded MT Bold","Nunito","Helvetica Neue",Arial,sans-serif;
+}
+html,body{margin:0;height:100%;background:#111;overflow:hidden}
+body.rec{cursor:none}
+#stage{
+  position:absolute;left:50%;top:50%;width:1080px;height:1920px;
+  transform:translate(-50%,-50%) scale(var(--s,0.4));
+  background:var(--paper) repeating-linear-gradient(to bottom,transparent 0 70px,var(--line) 70px 73px);
+  overflow:hidden;font-family:var(--round);color:var(--ink);
+}
+#stage::before{content:"";position:absolute;left:110px;top:0;bottom:0;width:4px;background:#F3B8B6}
+
+.hdr{position:absolute;top:90px;left:0;right:0;text-align:center}
+.pill{display:inline-block;background:var(--ink);color:var(--paper);font-size:44px;letter-spacing:6px;padding:18px 44px;border-radius:60px}
+.brand{position:absolute;bottom:90px;left:0;right:0;text-align:center;font-size:38px;opacity:.75}
+.brand b{color:var(--red)}
+
+.panel{position:absolute;left:0;right:0;top:260px;bottom:300px;opacity:0;transition:opacity .5s}
+.panel.on{opacity:1}
+.el{position:absolute;left:0;right:0;text-align:center;white-space:nowrap;opacity:0;transform:translateY(30px);transition:opacity .5s,transform .5s}
+.el.on{opacity:1;transform:none}
+.hand{font-family:var(--hand);font-weight:bold}
+.title{font-size:64px}
+.red{color:var(--red)}
+.green{color:var(--green)}
+.blue{color:var(--blue)}
+.hl{background:rgba(46,158,107,.15);border-bottom:8px solid var(--green);padding:0 10px;border-radius:8px;color:var(--green)}
+
+.mark{position:relative;z-index:0;padding:0 16px}
+.mark::before{content:"";position:absolute;z-index:-1;left:0;top:22%;height:66%;width:0;background:var(--marker);border-radius:6px;opacity:0;transition:opacity .5s,width 0s .5s}
+.mark.lit::before,.mark.on::before,.on>.mark.full::before{width:100%;opacity:1;transition:width .7s ease-out,opacity 0s}
+
+.write{opacity:1;transform:none;clip-path:inset(-40px 100% -40px -40px);transition:clip-path 1.2s linear}
+.write.on{clip-path:inset(-40px -40px -40px -40px)}
+
+.draw{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1s ease-in-out}
+.draw.on{stroke-dashoffset:0}
+svg .fade{opacity:0;transition:opacity .6s}
+svg .fade.on{opacity:1}
+
+.pop{transform:scale(.4);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.pop.on{transform:scale(1)}
+
+/* the two answer cards */
+.card{display:inline-block;background:#fff;border:5px solid var(--ink);border-radius:26px;padding:14px 26px;font-size:56px;box-shadow:5px 5px 0 var(--ink)}
+
+/* 5-second countdown ring: 5 · 4 · 3 · 2 · 1, then ? */
+#ring.on circle{stroke-dashoffset:0}
+.cd,.qm{position:absolute;left:0;right:0;top:0;line-height:180px;text-align:center;color:var(--red);opacity:0}
+.cd{font-family:var(--round);font-size:100px}
+.qm{font-size:110px}
+#ring.on .cd{animation:cdn 1s linear var(--d) both}
+#ring.on .qm{animation:qin .3s ease-out 6s both}
+@keyframes cdn{0%{opacity:0;transform:scale(1.5)}15%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0}}
+@keyframes qin{from{opacity:0;transform:scale(1.5)}to{opacity:1;transform:none}}
+.instant .qm{opacity:1}
+/* − ab terms: the colour of the strips */
+.yel{color:#D99A00}
+/* the two − ab blink, the second slides onto the first, then the line becomes − 2ab */
+.term{opacity:0;transition:opacity .5s}
+.term.on{opacity:1}
+#m1.on{transition-delay:.7s}
+#m2.on{transition-delay:.7s}
+.two{display:inline-block;opacity:0;margin:0 -.07em 0 .02em}
+#fl.merging .mg{animation:blink .5s ease-in-out 3}
+#fl.merging #m2{animation:blink .5s ease-in-out 3,slideTo .8s ease-in 1.6s forwards}
+#fl.merging .two{animation:twoIn .5s cubic-bezier(.3,1.6,.5,1) 2.4s forwards}
+#fl.merging .bsq{text-decoration:underline 6px var(--green);text-underline-offset:14px}
+@keyframes twoIn{from{opacity:0;transform:scale(2.2)}to{opacity:1;transform:none}}
+@keyframes blink{50%{opacity:.15}}
+@keyframes slideTo{to{transform:translateX(var(--dx));opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+.instant #fl.merging .two{opacity:1}
+.instant #fl.merging #m2{opacity:0}
+
+/* pieces leave the square: stay for a moment, then slide away */
+.leave{opacity:0}
+.leave.on{animation:leave 1.6s ease-in forwards}
+@keyframes leave{0%,40%{opacity:1;transform:none}100%{opacity:0;transform:var(--to)}}
+.flash.on{animation:flash .5s ease-in-out 4}
+@keyframes flash{50%{fill-opacity:.55}}
+/* the corner given back: pops in green, then fades */
+/* the green corner pops into the hole after the red box blinks */
+.addin{opacity:0;transform-box:fill-box;transform-origin:center}
+.addin.on{opacity:1;animation:addin .6s cubic-bezier(.3,1.6,.5,1) .1s both}
+@keyframes addin{0%{opacity:0;transform:scale(.3)}100%{opacity:1;transform:none}}
+/* elements already seen: reappear without replaying their animation */
+.noanim,.noanim *{transition:none!important;animation:none!important}
+@keyframes glow{0%,100%{fill-opacity:0}50%{fill-opacity:.3}}
+.glow.on{animation:glow 1.1s ease-in-out 2 .6s}
+.instant .leave{display:none}
+
+#help{position:fixed;left:16px;bottom:16px;background:rgba(255,255,255,.94);color:#1F2A44;font:15px/1.55 -apple-system,Helvetica,sans-serif;padding:12px 16px;border-radius:10px;max-width:360px;z-index:9}
+#help i{display:block;margin-top:6px;font-style:normal;font-weight:600}
+#help b{font-family:ui-monospace,Menlo,monospace;background:#1F2A44;color:#fff;border-radius:4px;padding:0 6px}
+#help.hide{display:none}
+@media (max-width:600px){ #help .keys{display:none} #help i{margin:0} #help{right:16px;max-width:none;text-align:center;font-size:17px} }
+.instant *, .instant *::before, .instant{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion: reduce){ #stage *{transition-duration:.01s!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="hdr"><span class="pill">MISTAKE AUTOPSY #2</span></div>
+
+  <!-- 1. Hook: which one is correct? (tree) — revisited at the end with the answer -->
+  <section class="panel" id="p1">
+    <div class="el title" id="q" style="top:20px">Which one is correct? 🤔</div>
+    <div class="el write hand" id="top" style="top:150px;font-size:110px;transition-duration:.9s">(a − b)² = ?</div>
+    <svg style="position:absolute;left:0;top:0;overflow:visible" width="1080" height="1360">
+      <path class="draw" id="br1" pathLength="1" stroke="#1F2A44" stroke-width="7" style="transition:stroke-dashoffset .4s ease-out" d="M 520 310 L 330 440"/>
+      <path class="draw" id="br2" pathLength="1" stroke="#1F2A44" stroke-width="7" style="transition:stroke-dashoffset .4s ease-out" d="M 560 310 L 750 440"/>
+    </svg>
+    <div class="el pop hand" id="cA" style="top:450px;left:125px;right:auto;width:400px;transition-delay:.3s"><span class="card">a² − 2ab − b²</span></div>
+    <div class="el pop hand" id="cB" style="top:450px;left:555px;right:auto;width:400px;transition-delay:.3s"><span class="card">a² − 2ab + b²</span></div>
+    <svg style="position:absolute;left:0;top:0;overflow:visible" width="1080" height="1360">
+      <!-- answer marks (end of the video) -->
+      <path class="draw" id="xA" pathLength="1" stroke="#E53935" stroke-width="12" d="M 150 500 L 500 512"/>
+      <rect class="draw" id="okB" pathLength="1" x="548" y="444" width="404" height="140" rx="34" stroke="#2E9E6B" stroke-width="10"/>
+    </svg>
+    <div class="el pop" id="bA" style="top:610px;left:125px;right:auto;width:400px;font-size:84px;color:var(--red)">✖&#xFE0E;</div>
+    <div class="el pop" id="bB" style="top:610px;left:555px;right:auto;width:400px;font-size:80px;transition-delay:.4s">✅</div>
+    <div class="el" id="ring" style="top:700px;left:450px;right:auto;width:180px;height:180px;transform:none;transition-delay:.8s">
+      <svg width="180" height="180" style="position:absolute;left:0;top:0"><circle class="draw" pathLength="1" cx="90" cy="90" r="78" stroke="#E53935" stroke-width="10" transform="rotate(-90 90 90)" style="transition:stroke-dashoffset 5s linear 1s"/></svg>
+      <div class="cd" style="--d:1s">5</div><div class="cd" style="--d:2s">4</div><div class="cd" style="--d:3s">3</div><div class="cd" style="--d:4s">2</div><div class="cd" style="--d:5s">1</div>
+      <div class="qm hand">?</div>
+    </div>
+    <div class="el hand green" id="ans" style="top:800px;font-size:70px">(a − b)² = a² − 2ab + b²</div>
+  </section>
+
+  <!-- 2. The square: what is a, b, a − b, (a − b)², b², ab — then build the rule -->
+  <section class="panel" id="p2">
+    <div class="el title" id="t2" style="top:10px;font-size:60px">Let's check with a square</div>
+    <svg style="position:absolute;left:0;top:110px;overflow:visible" width="1080" height="850" font-family="Bradley Hand, Chalkboard SE, Patrick Hand, cursive" font-weight="bold" text-anchor="middle">
+      <!-- pieces: square x 300–900, y 140–740 ; a − b = 400, b = 200 -->
+      <rect class="fade" id="blue" x="300" y="140" width="400" height="400" fill="#3B6FD8" fill-opacity=".3"/>
+      <rect class="fade" id="grey" x="700" y="540" width="200" height="200" fill="#1F2A44" fill-opacity=".15"/>
+      <rect class="fade" id="yR" x="700" y="140" width="200" height="600" fill="#FFE066" fill-opacity=".55" stroke="#E0A800" stroke-width="14"/>
+      <rect class="fade" id="yB" x="300" y="540" width="600" height="200" fill="#FFE066" fill-opacity=".55" stroke="#E0A800" stroke-width="14"/>
+      <!-- regions used while building the rule -->
+      <rect class="fade" id="rR" x="700" y="140" width="200" height="600" fill="#fff" stroke="#1F2A44" stroke-width="7"/>
+      <rect class="fade" id="rB" x="300" y="540" width="400" height="200" fill="#fff" stroke="#1F2A44" stroke-width="7"/>
+      <rect class="fade" id="blueO" x="300" y="140" width="400" height="400" fill="#3B6FD8" fill-opacity=".3" stroke="#1F2A44" stroke-width="7"/>
+      <rect class="fade glow" id="blueG" x="300" y="140" width="400" height="400" fill="#3B6FD8" fill-opacity="0" stroke="#3B6FD8" stroke-width="9"/>
+      <!-- the second strip once the first has gone: its corner is empty -->
+      <rect class="fade" id="yB2" x="300" y="540" width="400" height="200" fill="#FFE066" fill-opacity=".55"/>
+      <rect class="fade" id="yB2o" x="300" y="540" width="600" height="200" fill="none" stroke="#E0A800" stroke-width="14"/>
+      <g class="leave" id="goR" style="--to:translateX(320px)">
+        <rect x="700" y="140" width="200" height="600" fill="#FFE066" fill-opacity=".7" stroke="#E0A800" stroke-width="6"/>
+        <text x="800" y="460" font-size="76" fill="#1F2A44">ab</text>
+      </g>
+      <g class="leave" id="goB" style="--to:translateY(260px)">
+        <rect x="300" y="540" width="400" height="200" fill="#FFE066" fill-opacity=".7"/>
+        <rect x="700" y="540" width="200" height="200" fill="#2E9E6B" fill-opacity=".4"/>
+        <rect x="300" y="540" width="600" height="200" fill="none" stroke="#E0A800" stroke-width="14"/>
+        <text x="500" y="665" font-size="76" fill="#1F2A44">ab</text>
+      </g>
+      <rect class="fade flash" id="gh" x="700" y="540" width="200" height="200" fill="#E53935" fill-opacity=".15" stroke="#E53935" stroke-width="7" stroke-dasharray="18 12"/>
+      <g class="addin" id="addB">
+        <rect x="700" y="540" width="200" height="200" fill="#2E9E6B" fill-opacity=".4" stroke="#2E9E6B" stroke-width="7"/>
+        <text x="800" y="665" font-size="76" fill="#2E9E6B">b²</text>
+      </g>
+      <!-- outline + cut lines -->
+      <path class="draw" id="sq" pathLength="1" stroke="#1F2A44" stroke-width="9" d="M 300 140 H 900 V 740 H 300 Z"/>
+      <path class="draw" id="cuts" pathLength="1" stroke="#1F2A44" stroke-width="5" stroke-dasharray="1" d="M 700 140 V 740 M 300 540 H 900"/>
+      <!-- labels -->
+      <text class="fade" id="aIn" x="600" y="470" font-size="110" fill="#1F2A44" fill-opacity=".35">a²</text>
+      <g class="fade" id="aTL" font-size="64" fill="#1F2A44"><text x="600" y="110">a</text><text x="255" y="462">a</text></g>
+      <g class="fade" id="aBR" font-size="64" fill="#1F2A44"><text x="600" y="810">a</text><text x="945" y="462">a</text></g>
+      <g class="fade" id="bLab" fill="#E0A800" font-size="60">
+        <path d="M 705 118 H 895 M 705 106 V 130 M 895 106 V 130 M 278 545 V 735 M 266 545 H 290 M 266 735 H 290" stroke="#E0A800" stroke-width="6" fill="none"/>
+        <text x="800" y="96">b</text><text x="245" y="660">b</text>
+      </g>
+      <g class="fade" id="amb" fill="#3B6FD8" font-size="56">
+        <path d="M 305 118 H 695 M 305 106 V 130 M 695 106 V 130 M 278 145 V 535 M 266 145 H 290 M 266 535 H 290" stroke="#3B6FD8" stroke-width="6" fill="none"/>
+        <text x="500" y="96">a − b</text><text x="190" y="360">a − b</text>
+      </g>
+      <text class="fade" id="wantL" x="500" y="362" font-size="70" fill="#3B6FD8">(a − b)²</text>
+      <text class="fade" id="b2L" x="800" y="665" font-size="76" fill="#1F2A44">b²</text>
+      <text class="fade" id="abR" x="800" y="465" font-size="76" fill="#1F2A44">ab</text>
+      <text class="fade" id="b2D" x="800" y="665" font-size="76" fill="#1F2A44" fill-opacity=".25">b²</text>
+      <text class="fade" id="abB" x="500" y="665" font-size="76" fill="#1F2A44">ab</text>
+    </svg>
+    <div class="el blue" id="capW" style="top:975px;font-size:58px">The part we want</div>
+    <!-- one formula line that stays put: each new term fades into its reserved place -->
+    <div class="el hand" id="fl" style="top:960px;font-size:60px"><span class="blue">(a − b)²</span> = a² <span class="term yel mg" id="m1" style="display:inline-block">−<span class="two">2</span>ab</span> <span class="term green bsq" id="tb">+ b²</span> <span class="term yel mg" id="m2" style="display:inline-block">− ab</span></div>
+    <div class="el red" id="capT" style="top:1090px;font-size:60px">The corner is already gone!</div>
+  </section>
+
+  <!-- 3. Try it yourself (applet link) -->
+  <section class="panel" id="p3">
+    <div class="el title" id="ty1" style="top:40px">Try it yourself! 👆</div>
+    <svg class="el" id="tysq" style="top:170px" width="1080" height="560" viewBox="0 0 1080 560">
+      <g transform="translate(300,20)">
+        <rect x="0" y="0" width="380" height="380" fill="#3B6FD8" fill-opacity=".3">
+          <animate attributeName="width"  values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="380;280;380" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="380" y="0" width="100" height="380" fill="#FFE066" fill-opacity=".6">
+          <animate attributeName="x"      values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="100;200;100" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="380;280;380" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="380" width="380" height="100" fill="#FFE066" fill-opacity=".6">
+          <animate attributeName="y"      values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="100;200;100" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="380" y="380" width="100" height="100" fill="#1F2A44" fill-opacity=".15">
+          <animate attributeName="x"      values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="y"      values="380;280;380" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="width"  values="100;200;100" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="100;200;100" dur="4s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="0" width="480" height="480" fill="none" stroke="#1F2A44" stroke-width="8"/>
+      </g>
+    </svg>
+    <div class="el pop" id="ty3" style="top:780px;font-size:76px;transition-delay:.8s"><span class="mark full">🔗 Link in bio</span></div>
+  </section>
+
+  <!-- 4. Call to action -->
+  <section class="panel" id="p4">
+    <svg class="el" id="logo" style="top:40px;margin:auto" width="1080" height="380" viewBox="-350 0 1780 1080">
+      <text x="540" y="770" text-anchor="middle" font-family="Arial Rounded MT Bold, Nunito, Helvetica Neue, Arial" font-weight="bold" font-size="640" fill="#1F2A44">?</text>
+      <path d="M 835 270 C 1000 400, 975 790, 700 885 C 450 990, 135 860, 118 560 C 100 280, 380 108, 640 150 C 760 168, 850 205, 905 262" fill="none" stroke="#E53935" stroke-width="38" stroke-linecap="round"/>
+    </svg>
+    <div class="el" id="c1" style="top:490px;font-size:72px">Where did <span class="red">YOU</span> go wrong?</div>
+    <div class="el pop" id="i1" style="top:700px;left:0;right:50%;font-size:96px;line-height:1;transition-delay:.9s">📸</div>
+    <div class="el pop" id="i2" style="top:700px;left:50%;right:0;font-size:96px;line-height:1;transition-delay:1.5s">💾</div>
+  </section>
+
+  <div class="brand">Where Did I Go <b>Wrong?</b> | Maths</div>
+</div>
+
+<div id="help">
+  <span class="keys"><b>Tap</b> the page, or press <b>→</b> / <b>Space</b>, for the next step<br>
+  <b>←</b> back &nbsp; <b>R</b> restart &nbsp; <b>M</b> sound on/off<br>
+  Recording: <b>S</b> step mode · <b>A</b> silent auto-play · <b>H</b> hide this box</span>
+  <i>Tap this box to hide it ✕</i>
+</div>
+
+<script>
+// Each step reveals `show` elements (kept on for the rest of that panel) and turns `hide` ones off from then on.
+// `sfx` = sound(s) on entering the step. `ms` = auto-play duration, roughly matching the voiceover in script-b.md.
+const STEPS = [
+  {p:'p1', show:['q','top'], sfx:'write@.9', ms:3500},
+  {p:'p1', show:['br1','cA'], sfx:'pop1', ms:2000},
+  {p:'p1', show:['br2','cB','ring'], sfx:['pop1','tick5'], ms:9000},
+  {p:'p2', show:['t2','sq','aIn','aTL','aBR'], ms:5000},
+  {p:'p2', show:['cuts','bLab'], hide:['aIn','aTL'], sfx:'swish', ms:3000},
+  {p:'p2', show:['amb'], sfx:'swish', ms:3000},
+  {p:'p2', show:['blue','wantL','capW'], sfx:'reveal', ms:4000},
+  {p:'p2', show:['grey','b2L'], hide:['capW'], ms:3000},
+  {p:'p2', show:['yR','abR','b2D'], hide:['grey','b2L'], sfx:'swish', ms:3000},
+  {p:'p2', show:['yB','abB'], hide:['yR','abR'], sfx:'swish', ms:3000},
+  {p:'p2', show:['rR','rB','blueO','fl'], hide:['sq','cuts','yB','abB','b2D','aBR','bLab','blue'], ms:4000},
+  {p:'p2', show:['goR','m1'], hide:['rR'], sfx:'whoosh', ms:3000},
+  {p:'p2', show:['yB2','yB2o','abB'], sfx:'swish', ms:2500},
+  {p:'p2', show:['gh','capT'], sfx:'buzz', ms:3000},
+  {p:'p2', show:['addB','tb'], hide:['gh','capT'], sfx:'chime@.1', ms:3500},
+  {p:'p2', show:['goB','m2'], hide:['rB','yB2','yB2o','abB','gh','capT','addB'], sfx:'whoosh', ms:3000},
+  {p:'p2', show:['blueG'], add:{fl:'merging'}, sfx:['tick@0','tick@.5','tick@1','whoosh@1.6','chime@2.5'], ms:5000},
+  {p:'p1', show:['xA','bA','okB','bB','ans'], hide:['ring'], still:['q','top','br1','br2','cA','cB','ans'], sfx:['buzz','chime@.9'], ms:5000},
+  {p:'p3', show:['ty1','tysq','ty3'], ms:3500},
+  {p:'p4', show:['logo','c1','i1','i2'], sfx:'pop2', ms:6000},
+];
+
+const stage = document.getElementById('stage');
+const help = document.getElementById('help');
+let cur = -1, timer = null;
+
+function fit(){ stage.style.setProperty('--s', Math.min(innerWidth/1080, innerHeight/1920)); }
+addEventListener('resize', fit); fit();
+
+/* ---------- soft sounds (Web Audio, generated — no files) ---------- */
+let ac = null, muted = false;
+function audio(){ try{ ac = ac || new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); }catch(e){} return ac; }
+function play(kind){
+  if (muted || !kind) return;
+  const [name, arg] = kind.split('@');
+  const a = audio(); if (!a) return;
+  const T = a.currentTime;
+  const noise = (t, len, type, f1, f2, peak) => {
+    const buf = a.createBuffer(1, Math.ceil(a.sampleRate*len), a.sampleRate), d = buf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    src.buffer = buf; f.type = type; f.Q.value = .9;
+    f.frequency.setValueAtTime(f1,t); f.frequency.linearRampToValueAtTime(f2,t+len);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+Math.min(.06,len/3)); g.gain.linearRampToValueAtTime(0,t+len);
+    src.connect(f); f.connect(g); g.connect(a.destination); src.start(t); src.stop(t+len);
+  };
+  const tone = (t, hz, dur, peak, type='sine', hzEnd) => {
+    const o = a.createOscillator(), g = a.createGain(); o.type = type;
+    o.frequency.setValueAtTime(hz,t); if (hzEnd) o.frequency.exponentialRampToValueAtTime(hzEnd,t+dur);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+.012); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur+.05);
+  };
+  const at = +arg || 0;
+  switch (name){
+    case 'swish':  noise(T,.55,'bandpass',1800,3200,.12); break;                    // highlighter / marking
+    case 'whoosh': noise(T+(arg ? at : .6),.6,'bandpass',900,2600,.12); break;       // a strip / term slides away
+    case 'tick':   tone(T+at,1200,.15,.06); break;                                    // blink
+    case 'tick5':  [1,2,3,4,5].forEach(t => tone(T+t,1000,.12,.06)); tone(T+6,660,.3,.06); break;  // 5 · 4 · 3 · 2 · 1
+    case 'chime':  tone(T+at,784,.9,.12); tone(T+at+.12,1047,.9,.12); break;        // correct!
+    case 'write':
+      for (let t = 0; t < (at || 1.2) - .05; t += .08 + Math.random()*.06)
+        noise(T+t, .06+Math.random()*.05, 'bandpass', 2400+Math.random()*1600, 3200+Math.random()*1600, .045+Math.random()*.03);
+      break;
+    case 'buzz':   tone(T+.2,392,.28,.08,'triangle'); tone(T+.46,311,.45,.08,'triangle'); break;  // uh-oh
+    case 'reveal': tone(T,500,.55,.06,'sine',1000); tone(T+.3,1500,.25,.04); tone(T+.45,2000,.3,.035); break;
+    case 'pop1':   tone(T+.3,700,.14,.14,'sine',250); break;                           // one card
+    case 'pop2':   tone(T+1.4,700,.14,.14,'sine',250); tone(T+1.7,700,.14,.14,'sine',250); break;  // two cards / two icons
+  }
+}
+
+/* ---------- step engine ---------- */
+function apply(i, sound){
+  cur = Math.max(-1, Math.min(i, STEPS.length-1));
+  document.querySelectorAll('.on,.lit,.noanim,.merging').forEach(e => e.classList.remove('on','lit','noanim','merging'));
+  if (cur < 0) return;
+  const st = STEPS[cur], p = st.p;
+  (st.still||[]).forEach(id => document.getElementById(id).classList.add('noanim'));
+  document.getElementById(p).classList.add('on');
+  for (let j = 0; j <= cur; j++) if (STEPS[j].p === p){
+    STEPS[j].show.forEach(id => document.getElementById(id)?.classList.add('on'));
+    (STEPS[j].hide||[]).forEach(id => document.getElementById(id)?.classList.remove('on'));
+    Object.entries(STEPS[j].add||{}).forEach(([id, c]) => document.getElementById(id).classList.add(c));
+  }
+  // pieces that slide away / pop only play on the step they belong to
+  document.querySelectorAll('.leave.on').forEach(e => { if (!st.show.includes(e.id)) e.classList.remove('on'); });
+  if (sound) [].concat(st.sfx).forEach(play);
+}
+function next(){ help.classList.add('hide'); clearTimeout(timer); audio(); apply(cur+1, true); }
+
+function auto(){
+  clearTimeout(timer); apply(0, true);
+  (function tick(){ timer = setTimeout(() => { if (cur < STEPS.length-1){ apply(cur+1, true); tick(); } }, STEPS[cur].ms); })();
+}
+
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 's'){ clearTimeout(timer); help.classList.add('hide'); document.body.classList.add('rec'); audio(); apply(-1); }
+  else if (k === 'a'){ help.classList.add('hide'); document.body.classList.add('rec'); audio(); auto(); }
+  else if (k === 'arrowright' || k === ' ' || k === 'enter'){ e.preventDefault(); next(); }
+  else if (k === 'arrowleft'){ clearTimeout(timer); apply(cur-1); }
+  else if (k === 'r'){ clearTimeout(timer); apply(-1); }
+  else if (k === 'm'){ muted = !muted; }
+  else if (k === 'h'){ help.classList.toggle('hide'); }
+});
+stage.addEventListener('click', next);
+help.addEventListener('click', e => { e.stopPropagation(); help.classList.add('hide'); audio(); });
+
+// how far the second − ab slides to reach the first
+function layoutMerge(){
+  const sc = parseFloat(getComputedStyle(stage).getPropertyValue('--s')) || 1;
+  const a = document.getElementById('m1').getBoundingClientRect(), b = document.getElementById('m2').getBoundingClientRect();
+  document.getElementById('m2').style.setProperty('--dx', ((a.left - b.left) / sc) + 'px');
+}
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(layoutMerge);
+addEventListener('resize', layoutMerge);
+
+// ?step=N shows the finished state of step N (used for previews / carousel stills)
+const q = new URLSearchParams(location.search);
+if (q.has('step')){ stage.classList.add('instant'); help.classList.add('hide'); apply(+q.get('step')); }
+</script>
+</body>
+</html>
