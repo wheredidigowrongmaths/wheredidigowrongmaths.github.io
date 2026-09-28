@@ -33,7 +33,9 @@ h2{font-size:20px;letter-spacing:3px;margin:0 0 14px}
 .ep:hover,.ep:focus-visible{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
 .num{flex:none;background:var(--ink);color:var(--paper);border-radius:12px;padding:8px 12px;font-size:18px}
 .ep .t{font-family:var(--hand);font-weight:bold;font-size:28px;line-height:1.1}
-.ep .t s{color:var(--red);text-decoration-thickness:3px}
+.ep .t .nw{white-space:nowrap}
+.ep .t .bad{background:rgba(229,57,53,.5);border-radius:8px;padding:0 6px}
+.ep .t .x{color:var(--red);font-size:.7em;margin-left:6px;vertical-align:.1em}
 .ep .t .ok{color:var(--green)}
 .ep .go{margin-left:auto;font-size:26px}
 .soon{border-style:dashed;box-shadow:none;opacity:.6;pointer-events:none}
@@ -53,7 +55,7 @@ footer{margin-top:40px;font-size:14px;opacity:.7}
   <h2>MISTAKE AUTOPSIES</h2>
   <a class="ep" href="autopsy-01/">
     <span class="num">#1</span>
-    <span class="t"><s>(a + b)² = a² + b²</s></span>
+    <span class="t">(a + b)² = <span class="nw"><span class="bad">a² + b²</span><span class="x" aria-label="wrong">✖&#xFE0E;</span></span></span>
     <span class="go">👆</span>
   </a>
   <a class="ep" href="autopsy-02/">
